@@ -1,16 +1,26 @@
-# hello_world_app_flutter
+# Flutter AWS Amplify Mobile App
 
-A new Flutter project.
+A simple mobile application built with **Flutter** and integrated with **AWS Amplify** as part of learning the AWS mobile development stack.
 
-## Getting Started
+## Tech Stack
+- Flutter
+- AWS Amplify
+- Amazon Cognito
+- AWS CloudFormation
 
-This project is a starting point for a Flutter application.
+## Features
+- Basic Flutter mobile application
+- AWS Amplify backend setup
+- Authentication using Amazon Cognito
+- Simple Hello World interface
 
-A few resources to get you started if this is your first Flutter project:
+## Run the Project
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Author
+Gayanga Bandara  
+Software Engineering Undergraduate – SLTC
