@@ -21,6 +21,7 @@ flutter pub get
 flutter run
 ```
 
-## Author
-Gayanga Bandara  
-Software Engineering Undergraduate – SLTC
+## 📄 License
+MIT License © [GayangaBandara](https://github.com/GayangaBandara)
+
+---
