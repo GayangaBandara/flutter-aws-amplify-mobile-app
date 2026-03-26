@@ -7,7 +7,7 @@ provider:
   runtime: nodejs20.x
   stage: ${opt:stage, 'default'}
   region: ${opt:region, 'eu-north-1'}
-  memorySize: 256
+  memorySize: 512
   timeout: 30
 
   # Environment variables for API endpoint configuration
@@ -45,4 +45,4 @@ package:
   exclude:
     - '**/*'
   include:
-    - 'index.js'
+    - 'index.mjs'

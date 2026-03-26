@@ -7,7 +7,7 @@ class AwsConfig {
   // API Gateway endpoint - UPDATE THIS AFTER DEPLOYING LAMBDA
   // The deployment script will output the actual URL
   static const String apiEndpoint =
-      'https://zk3wybvw4l.execute-api.eu-north-1.amazonaws.com/default/';
+      'https://zk3wybvw4l.execute-api.eu-north-1.amazonaws.com/default/voice-agent-api';
 
   // AWS Region
   static const String region = 'eu-north-1';

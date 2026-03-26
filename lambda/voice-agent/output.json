@@ -1,0 +1,1 @@
+{"statusCode":500,"headers":{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type,Authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS"},"body":"{\"error\":\"The provided model identifier is invalid.\",\"reply\":\"I apologize, but I encountered an error. Please try again.\",\"details\":\"Unknown error\"}"}

@@ -11,7 +11,7 @@ echo "========================================="
 FUNCTION_NAME="VoiceAIFunction"
 API_NAME="VoiceAIApi"
 STAGE_NAME="prod"
-REGION="us-east-1"
+REGION="eu-north-1"
 
 # Get AWS account ID
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)

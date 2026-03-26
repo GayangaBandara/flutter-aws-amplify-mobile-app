@@ -1,9 +1,9 @@
 {
   "name": "voice-ai-lambda",
   "version": "1.0.0",
-  "description": "Voice AI Lambda function for Flutter app integration",
+  "description": "Voice AI Lambda function for Flutter app integration with AWS Bedrock",
   "type": "module",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
     "test": "jest",
     "deploy": "node ../deploy.js"
@@ -13,10 +13,14 @@
     "ai",
     "lambda",
     "flutter",
-    "aws"
+    "aws",
+    "bedrock",
+    "claude"
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.0.0"
+  },
   "devDependencies": {}
 }

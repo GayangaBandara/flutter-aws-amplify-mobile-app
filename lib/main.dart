@@ -38,6 +38,7 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
   late stt.SpeechToText _speech;
   bool _isListening = false;
   String _recognizedText = '';
+  bool _messageProcessed = false; // Prevent duplicate processing
 
   late FlutterTts _flutterTts;
   bool _isSpeaking = false;
@@ -104,6 +105,7 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     setState(() {
       _isListening = true;
       _recognizedText = '';
+      _messageProcessed = false; // Reset flag when starting to listen
     });
 
     // Start listening for speech
@@ -113,8 +115,9 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
           _recognizedText = result.recognizedWords;
         });
 
-        // When user stops speaking, process the message
-        if (result.finalResult) {
+        // When user stops speaking, process the message (only once)
+        if (result.finalResult && !_messageProcessed) {
+          _messageProcessed = true; // Mark as processed
           _processUserMessage(_recognizedText);
         }
       },
@@ -130,8 +133,9 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
       _isListening = false;
     });
 
-    // If we have recognized text, process it
-    if (_recognizedText.isNotEmpty) {
+    // Only process if not already processed (prevents duplicate requests)
+    if (_recognizedText.isNotEmpty && !_messageProcessed) {
+      _messageProcessed = true;
       _processUserMessage(_recognizedText);
     }
   }

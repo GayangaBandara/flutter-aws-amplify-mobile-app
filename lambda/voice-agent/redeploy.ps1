@@ -27,11 +27,31 @@ if (Test-Path "function.zip") {
     Remove-Item "function.zip" -Force
 }
 
-# Create zip with index.js and package.json
+# Create zip with index.mjs and node_modules
+Write-Host "" 
+Write-Host "📦 Creating function.zip..." -ForegroundColor Yellow
+
+# Remove old zip if exists
+if (Test-Path "function.zip") {
+    Remove-Item "function.zip" -Force
+}
+
+# Create zip with index.mjs and node_modules
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::Open("$PWD\function.zip", [System.IO.Compression.ZipArchiveMode]::Create)
-[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$PWD\index.js", "index.js") | Out-Null
+[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$PWD\index.mjs", "index.mjs") | Out-Null
 [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$PWD\package.json", "package.json") | Out-Null
+
+# Add node_modules from installed packages
+$nodeModulesPath = "$PWD\node_modules"
+if (Test-Path $nodeModulesPath) {
+    Get-ChildItem -Path $nodeModulesPath -Recurse | ForEach-Object {
+        if (-not $_.PSIsContainer) {
+            $relativePath = $_.FullName.Substring($nodeModulesPath.Length + 1)
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, "node_modules\$relativePath") | Out-Null
+        }
+    }
+}
 $zip.Dispose()
 
 Write-Host "✅ function.zip created" -ForegroundColor Green

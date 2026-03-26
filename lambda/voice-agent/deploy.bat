@@ -10,7 +10,7 @@ REM Configuration
 set FUNCTION_NAME=VoiceAIFunction
 set API_NAME=VoiceAIApi
 set STAGE_NAME=prod
-set REGION=us-east-1
+set REGION=eu-north-1
 
 REM Get AWS account ID
 for /f "delims=" %%i in ('aws sts get-caller-identity --query Account --output text') do set AWS_ACCOUNT_ID=%%i
