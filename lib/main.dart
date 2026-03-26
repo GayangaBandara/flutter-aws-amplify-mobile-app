@@ -1,25 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
-
-// ============================================================================
-// VOICE AI AGENT - Main Entry Point
-// ============================================================================
-// This is a complete Voice AI Assistant application that:
-// 1. Listens to user's voice input (Speech-to-Text)
-// 2. Sends text to an AI API endpoint
-// 3. Receives AI response and speaks it out loud (Text-to-Speech)
-// ============================================================================
+import 'aws_config.dart';
 
 void main() {
   runApp(VoiceAIApp());
 }
 
-// ============================================================================
-// Message Class - Represents a single chat message
-// ============================================================================
 class Message {
   final String text;
   final bool isUser; // true = user message, false = AI response
@@ -27,9 +17,6 @@ class Message {
   Message({required this.text, required this.isUser});
 }
 
-// ============================================================================
-// Main Application Widget
-// ============================================================================
 class VoiceAIApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -42,38 +29,24 @@ class VoiceAIApp extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// Home Page - Contains all the Voice AI logic and UI
-// ============================================================================
 class VoiceAIHomePage extends StatefulWidget {
   @override
   _VoiceAIHomePageState createState() => _VoiceAIHomePageState();
 }
 
 class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
-  // --------------------------------------------------------------------------
-  // Voice Recognition (Speech-to-Text)
-  // --------------------------------------------------------------------------
   late stt.SpeechToText _speech;
   bool _isListening = false;
   String _recognizedText = '';
 
-  // --------------------------------------------------------------------------
-  // Text-to-Speech (TTS)
-  // --------------------------------------------------------------------------
   late FlutterTts _flutterTts;
   bool _isSpeaking = false;
 
-  // --------------------------------------------------------------------------
-  // State Management
-  // --------------------------------------------------------------------------
   List<Message> _messages = []; // Chat messages list
   bool _isLoading = false; // Loading indicator for API calls
 
-  // API Endpoint - Replace with your actual API URL
-  // Format: https://your-api-id.execute-api.region.amazonaws.com/prod/chat
-  final String _apiUrl =
-      'https://your-api-id.execute-api.region.amazonaws.com/prod/chat';
+  // API Endpoint - Use config
+  final String _apiUrl = AwsConfig.apiEndpoint;
 
   @override
   void initState() {
@@ -82,9 +55,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     _initializeTts();
   }
 
-  // --------------------------------------------------------------------------
-  // Initialize Speech-to-Text
-  // --------------------------------------------------------------------------
   void _initializeSpeech() {
     _speech = stt.SpeechToText();
     _speech.initialize(
@@ -107,9 +77,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Initialize Text-to-Speech
-  // --------------------------------------------------------------------------
   void _initializeTts() {
     _flutterTts = FlutterTts();
     _flutterTts.setCompletionHandler(() {
@@ -125,9 +92,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     });
   }
 
-  // --------------------------------------------------------------------------
-  // Start Voice Recognition
-  // --------------------------------------------------------------------------
   Future<void> _startListening() async {
     // Check if speech recognition is available
     bool available = await _speech.initialize();
@@ -160,9 +124,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Stop Voice Recognition
-  // --------------------------------------------------------------------------
   Future<void> _stopListening() async {
     await _speech.stop();
     setState(() {
@@ -175,9 +136,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // Process User Message - Add to list and send to API
-  // --------------------------------------------------------------------------
   void _processUserMessage(String text) {
     if (text.trim().isEmpty) return;
 
@@ -191,58 +149,86 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     _sendToAI(text);
   }
 
-  // --------------------------------------------------------------------------
-  // Send Message to AI API
-  // --------------------------------------------------------------------------
   Future<void> _sendToAI(String text) async {
     try {
-      // Make POST request to API
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'message': text}),
-      );
+      print('🔵 [API Request] Sending to: $_apiUrl');
+      print('📝 [API Request] Body: {"message": "$text"}');
 
-      // Check if request was successful
-      if (response.statusCode == 200) {
-        // Parse response
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        String aiReply = data['reply'] ?? 'No response received';
+      // Make POST request to API with explicit headers for web CORS
+      final response = await http
+          .post(
+            Uri.parse(_apiUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'message': text}),
+          )
+          .timeout(Duration(seconds: AwsConfig.timeout));
 
-        // Add AI response to chat
-        setState(() {
-          _messages.add(Message(text: aiReply, isUser: false));
-          _isLoading = false;
-        });
+      print('✅ [API Response] Status: ${response.statusCode}');
+      print('📦 [API Response] Body: ${response.body}');
+      print('🔗 [API Response] Headers: ${response.headers}');
 
-        // Speak the AI response
-        await _speakResponse(aiReply);
+      // Check for successful response
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          String aiReply =
+              data['reply'] ?? data['message'] ?? 'No response received';
+
+          print('💬 [AI Response] $aiReply');
+
+          // Add AI response to chat
+          setState(() {
+            _messages.add(Message(text: aiReply, isUser: false));
+            _isLoading = false;
+          });
+
+          // Speak the AI response
+          await _speakResponse(aiReply);
+        } catch (parseError) {
+          print('❌ [Parse Error] JSON parse failed: $parseError');
+          print('📄 [Parse Error] Body: ${response.body}');
+          _showError('API returned invalid response');
+          _addFallbackMessage('Could not parse API response');
+        }
       } else {
-        // API error
-        _showError('API request failed: ${response.statusCode}');
-        _addFallbackMessage();
+        print('⚠️ [HTTP Error] Status: ${response.statusCode}');
+        _showError('API Error: ${response.statusCode}');
+        _addFallbackMessage('API returned status ${response.statusCode}');
       }
+    } on TimeoutException {
+      print('⏱️ [Timeout] Request exceeded ${AwsConfig.timeout}s');
+      _showError('Request timeout - API not responding');
+      _addFallbackMessage('Request timeout after ${AwsConfig.timeout}s');
+    } on http.ClientException catch (e) {
+      print('❌ [Network Error] ${e.message}');
+      print('💡 [Hint] This is a CORS error. Check API Gateway CORS settings');
+      _showError('Network error: ${e.message}');
+      _addFallbackMessage(
+        'Network error - Verify API Gateway CORS is deployed',
+      );
     } catch (e) {
-      // Network or parsing error
-      print('Error sending to AI: $e');
-      _showError('Something went wrong');
-      _addFallbackMessage();
+      print('❌ [Unexpected Error] $e');
+      print('🔍 [Stack Trace] ${e.runtimeType}');
+      _showError('Unexpected error: $e');
+      _addFallbackMessage('Unexpected error occurred');
     }
   }
 
-  // --------------------------------------------------------------------------
-  // Add Fallback Error Message
-  // --------------------------------------------------------------------------
-  void _addFallbackMessage() {
+  void _addFallbackMessage([String? customMessage]) {
     setState(() {
-      _messages.add(Message(text: 'Something went wrong', isUser: false));
+      _messages.add(
+        Message(
+          text: customMessage ?? 'Something went wrong, please try again.',
+          isUser: false,
+        ),
+      );
       _isLoading = false;
     });
   }
 
-  // --------------------------------------------------------------------------
-  // Speak AI Response (Text-to-Speech)
-  // --------------------------------------------------------------------------
   Future<void> _speakResponse(String text) async {
     if (text.isEmpty) return;
 
@@ -253,9 +239,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     await _flutterTts.speak(text);
   }
 
-  // --------------------------------------------------------------------------
-  // Stop Speaking
-  // --------------------------------------------------------------------------
   Future<void> _stopSpeaking() async {
     await _flutterTts.stop();
     setState(() {
@@ -263,9 +246,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     });
   }
 
-  // --------------------------------------------------------------------------
-  // Show Error Message
-  // --------------------------------------------------------------------------
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -279,9 +259,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     });
   }
 
-  // --------------------------------------------------------------------------
-  // Clean up resources
-  // --------------------------------------------------------------------------
   @override
   void dispose() {
     _speech.cancel();
@@ -289,9 +266,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     super.dispose();
   }
 
-  // ===========================================================================
-  // UI - Build the Interface
-  // ===========================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -327,9 +301,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Empty State - Shown when no messages yet
-  // --------------------------------------------------------------------------
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -351,9 +322,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Messages List - Shows chat conversation
-  // --------------------------------------------------------------------------
   Widget _buildMessagesList() {
     return ListView.builder(
       padding: EdgeInsets.all(16),
@@ -365,9 +333,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Message Bubble - Individual message design
-  // --------------------------------------------------------------------------
   Widget _buildMessageBubble(Message message) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12),
@@ -424,9 +389,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Loading Indicator
-  // --------------------------------------------------------------------------
   Widget _buildLoadingIndicator() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8),
@@ -452,9 +414,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Status Bar - Shows current state (listening/speaking)
-  // --------------------------------------------------------------------------
   Widget _buildStatusBar() {
     String statusText = '';
     Color statusColor = Colors.transparent;
@@ -494,9 +453,6 @@ class _VoiceAIHomePageState extends State<VoiceAIHomePage> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Microphone Button
-  // --------------------------------------------------------------------------
   Widget _buildMicButton() {
     return FloatingActionButton.extended(
       onPressed: _isListening ? _stopListening : _startListening,

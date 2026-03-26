@@ -1,0 +1,22 @@
+{
+  "name": "voice-ai-lambda",
+  "version": "1.0.0",
+  "description": "Voice AI Lambda function for Flutter app integration",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "deploy": "node ../deploy.js"
+  },
+  "keywords": [
+    "voice",
+    "ai",
+    "lambda",
+    "flutter",
+    "aws"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
